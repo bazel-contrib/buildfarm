@@ -22,10 +22,7 @@ import java.io.Reader;
 import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.logging.Level;
-import lombok.extern.java.Log;
 
-@Log
 abstract class Controller implements IOResource {
   protected final Group group;
 
@@ -89,7 +86,6 @@ abstract class Controller implements IOResource {
 
   protected void writeInt(String propertyName, int value) throws IOException {
     Path path = getPath().resolve(propertyName);
-    log.log(Level.FINE, "Writing " + propertyName + "=" + value + " to " + path);
     try (Writer out = new OutputStreamWriter(Files.newOutputStream(path))) {
       out.write(String.format("%d\n", value));
     }
