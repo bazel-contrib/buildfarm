@@ -241,7 +241,7 @@ public final class Group {
       killAllProcesses(pids);
       if (deadline.isExpired() || !pids.containsAll(prevPids) || prevPids.containsAll(pids)) {
         deadline = Deadline.after(1, SECONDS);
-        log.log(Level.FINE, "Killed processes with PIDs {0}", pids);
+        log.log(Level.WARNING, "Killed processes with PIDs {0}", pids);
       }
       prevPids = pids;
     }
