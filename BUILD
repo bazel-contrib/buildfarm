@@ -106,6 +106,7 @@ pkg_files(
         # The delay wrapper is only intended to be used with the "skip_sleep" wrapper.
         "delay.sh",
         "macos-wrapper.sh",
+        "cgexec-wrapper",
     ],
     attributes = pkg_attributes(
         mode = "0555",
