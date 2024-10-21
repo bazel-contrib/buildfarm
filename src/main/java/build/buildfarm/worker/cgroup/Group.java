@@ -50,6 +50,9 @@ public final class Group {
   private static final Path rootPath = Paths.get("/sys/fs/cgroup");
   private static final POSIX posix = POSIXFactory.getNativePOSIX();
 
+  private static final String CGROUP_CONTROLLERS = "cgroup.controllers";
+  private static final String CGROUP_SUBTREE_CONTROL = "cgroup.subtree_control";
+
   @Getter @Nullable private final String name;
   @Nullable private final Group parent;
   @Getter private final Cpu cpu;
@@ -279,7 +282,7 @@ public final class Group {
       Files.createDirectory(cgroupPath);
     }
     if (setSubtreeControl) {
-      Path cgroupControllerPath = cgroupPath.resolve("cgroup.controllers");
+      Path cgroupControllerPath = cgroupPath.resolve(CGROUP_CONTROLLERS);
       while (!Files.exists(cgroupControllerPath)) {
         /* busy loop */
         log.log(Level.FINE, "Waiting for {0}", cgroupControllerPath);
@@ -302,7 +305,7 @@ public final class Group {
                 + ", missing "
                 + desiredAndNotAvailable);
       }
-      Path cgroupSubtreeControlPath = cgroupPath.resolve("cgroup.subtree_control");
+      Path cgroupSubtreeControlPath = cgroupPath.resolve(CGROUP_SUBTREE_CONTROL);
       while (!Files.exists(cgroupSubtreeControlPath)) {
         /* busy loop */
         log.log(Level.FINE, "Waiting for {0}", cgroupSubtreeControlPath);
