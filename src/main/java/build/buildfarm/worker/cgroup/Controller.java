@@ -32,15 +32,19 @@ abstract class Controller implements IOResource {
     this.group = group;
   }
 
-  public abstract String getName();
+  public abstract String getControllerName();
 
   protected final Path getPath() {
-    return group.getPath(getName());
+    if (Group.VERSION == CGroupVersion.CGROUPS_V2) {
+      return group.getPath();
+    } else {
+      return group.getPath(getControllerName());
+    }
   }
 
   protected final void open() throws IOException {
     if (!opened) {
-      group.create(getName());
+      group.create(getControllerName());
       opened = true;
     }
   }
@@ -57,7 +61,7 @@ abstract class Controller implements IOResource {
     Path path = getPath();
     boolean exists = true;
     while (exists) {
-      group.killUntilEmpty(getName());
+      group.killUntilEmpty(getControllerName());
       try {
         Files.delete(path);
         exists = false;
@@ -74,7 +78,7 @@ abstract class Controller implements IOResource {
   @Override
   public boolean isReferenced() {
     try {
-      return !group.isEmpty(getName());
+      return !group.isEmpty(getControllerName());
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
@@ -84,6 +88,13 @@ abstract class Controller implements IOResource {
     Path path = getPath().resolve(propertyName);
     try (Writer out = new OutputStreamWriter(Files.newOutputStream(path))) {
       out.write(String.format("%d\n", value));
+    }
+  }
+
+  protected void writeIntPair(String propertyName, int value, int value2) throws IOException {
+    Path path = getPath().resolve(propertyName);
+    try (Writer out = new OutputStreamWriter(Files.newOutputStream(path))) {
+      out.write(String.format("%d %d\n", value, value2));
     }
   }
 
