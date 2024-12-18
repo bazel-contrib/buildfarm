@@ -85,7 +85,7 @@ public class LocalResourceSetUtils {
         default:
           throw new IllegalStateException("unrecognized resource type: " + resource.getType());
       }
-      metrics.resourceTotalMetric.labels(resource.getName()).set(resource.getAmount());
+      metrics.resourceTotalMetric.labelValues(resource.getName()).set(resource.getAmount());
     }
     return resourceSet;
   }
@@ -142,15 +142,15 @@ public class LocalResourceSetUtils {
   private static boolean semaphoreAquire(Semaphore resource, String resourceName, int amount) {
     boolean wasAcquired = resource.tryAcquire(amount);
     if (wasAcquired) {
-      metrics.resourceUsageMetric.labels(resourceName).inc(amount);
+      metrics.resourceUsageMetric.labelValues(resourceName).inc(amount);
     }
-    metrics.requestersMetric.labels(resourceName).inc();
+    metrics.requestersMetric.labelValues(resourceName).inc();
     return wasAcquired;
   }
 
   private static boolean poolAcquire(
       Queue<Integer> resource, String resourceName, int amount, Consumer<Integer> onClaimed) {
-    metrics.requestersMetric.labels(resourceName).inc();
+    metrics.requestersMetric.labelValues(resourceName).inc();
     for (int i = 0; i < amount; i++) {
       Integer id = resource.poll();
       if (id == null) {
@@ -160,21 +160,21 @@ public class LocalResourceSetUtils {
       onClaimed.accept(id);
     }
     // only records when fully acquired
-    metrics.resourceUsageMetric.labels(resourceName).inc(amount);
+    metrics.resourceUsageMetric.labelValues(resourceName).inc(amount);
     return true;
   }
 
   private static void semaphoreRelease(Semaphore resource, String resourceName, int amount) {
     resource.release(amount);
-    metrics.resourceUsageMetric.labels(resourceName).dec(amount);
-    metrics.requestersMetric.labels(resourceName).dec();
+    metrics.resourceUsageMetric.labelValues(resourceName).dec(amount);
+    metrics.requestersMetric.labelValues(resourceName).dec();
   }
 
   private static void poolRelease(
       Queue<Integer> resource, String resourceName, List<Integer> claims) {
     claims.forEach(resource::add);
-    metrics.resourceUsageMetric.labels(resourceName).dec(claims.size());
-    metrics.requestersMetric.labels(resourceName).dec();
+    metrics.resourceUsageMetric.labelValues(resourceName).dec(claims.size());
+    metrics.requestersMetric.labelValues(resourceName).dec();
   }
 
   private static int getResourceRequestAmount(Platform.Property property) {

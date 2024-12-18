@@ -80,8 +80,9 @@ import io.grpc.Status.Code;
 import io.grpc.health.v1.HealthCheckResponse.ServingStatus;
 import io.grpc.protobuf.services.HealthStatusManager;
 import io.grpc.protobuf.services.ProtoReflectionService;
-import io.prometheus.client.Counter;
-import io.prometheus.client.Gauge;
+import io.prometheus.metrics.core.metrics.Counter;
+import io.prometheus.metrics.core.metrics.Gauge;
+import io.prometheus.metrics.core.metrics.GaugeWithCallback;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.FileSystem;
@@ -105,25 +106,25 @@ public final class Worker extends LoggingMain {
   private static final java.util.logging.Logger nettyLogger =
       java.util.logging.Logger.getLogger("io.grpc.netty");
   private static final Counter healthCheckMetric =
-      Counter.build()
+      Counter.builder()
           .name("health_check")
           .labelNames("lifecycle")
           .help("Service health check.")
           .register();
   private static final Counter workerPausedMetric =
-      Counter.build().name("worker_paused").help("Worker paused.").register();
+      Counter.builder().name("worker_paused").help("Worker paused.").register();
   private static final Gauge executionSlotsTotal =
-      Gauge.build()
+      Gauge.builder()
           .name("execution_slots_total")
           .help("Total execution slots configured on worker.")
           .register();
   private static final Gauge inputFetchSlotsTotal =
-      Gauge.build()
+      Gauge.builder()
           .name("input_fetch_slots_total")
           .help("Total input fetch slots configured on worker.")
           .register();
   private static final Gauge reportResultSlotsTotal =
-      Gauge.build()
+      Gauge.builder()
           .name("report_result_slots_total")
           .help("Total report result slots configured on worker.")
           .register();
@@ -602,17 +603,10 @@ public final class Worker extends LoggingMain {
     ExecutorService fetchService = BuildfarmExecutors.getFetchServicePool();
     FixedBufferPool zstdBufferPool =
         new FixedBufferPool(configs.getWorker().getZstdBufferPoolSize());
-    Gauge.build()
+    GaugeWithCallback.builder()
         .name("zstd_buffer_pool_used")
         .help("Current number of Zstd decompression buffers active")
-        .create()
-        .setChild(
-            new Gauge.Child() {
-              @Override
-              public double get() {
-                return zstdBufferPool.getNumActive();
-              }
-            })
+        .callback(callback -> callback.call(zstdBufferPool.getNumActive()))
         .register();
 
     InputStreamFactory remoteInputStreamFactory =
@@ -691,7 +685,7 @@ public final class Worker extends LoggingMain {
     startFailsafeRegistration();
 
     pipeline.start();
-    healthCheckMetric.labels("start").inc();
+    healthCheckMetric.labelValues("start").inc();
     executionSlotsTotal.set(configs.getWorker().getExecuteStageWidth());
     inputFetchSlotsTotal.set(configs.getWorker().getInputFetchStageWidth());
     reportResultSlotsTotal.set(configs.getWorker().getReportResultStageWidth());
@@ -750,7 +744,7 @@ public final class Worker extends LoggingMain {
     }
     healthStatusManager.setStatus(
         HealthStatusManager.SERVICE_NAME_ALL_SERVICES, ServingStatus.NOT_SERVING);
-    healthCheckMetric.labels("stop").inc();
+    healthCheckMetric.labelValues("stop").inc();
     executionSlotsTotal.set(0);
     inputFetchSlotsTotal.set(0);
     if (execFileSystem != null) {
